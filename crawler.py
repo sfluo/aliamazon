@@ -458,6 +458,7 @@ class HomeKitchenCrawler(Crawler):
 		except:
 			try:
 				salesrank = soup.find(id='SalesRank')
+				print salesrank
 				rank = salesrank.contents[2].strip().split(' ', 1)[0]
 				category = salesrank.contents[2].strip().split(' ', 1)[1]
 				record['Salesrank'] = rank
@@ -466,7 +467,21 @@ class HomeKitchenCrawler(Crawler):
 				record['Salesrank'] = ''
 				record['Category'] = '' 
 		
-	
+class OfficeSupplyCrawler(HomeKitchenCrawler):
+
+	def extractSaleRank(self, soup, record):
+		record['Salesrank'] = ''
+		try:
+			salesrank = soup.find(id='SalesRank')
+			rankvalues = salesrank.findAll('li', class_='zg_hrsr_item')
+			print rankvalues
+			for rankval in rankvalues:
+				record['Salesrank'] = record['Salesrank'] + ''.join(rankval.stripped_strings)
+			print record['Salesrank']
+		except:
+			record['Salesrank'] = ''
+			record['Category'] = '' 
+
 if __name__ == '__main__':
 	
 	if len(sys.argv) < 4:
@@ -487,6 +502,8 @@ if __name__ == '__main__':
 		crawler = HomeKitchenCrawler()
 	elif sys.argv[1] == 'music':
 		crawler = MusicCrawler()
+	elif sys.argv[1] == 'osupply':
+		crawler = OfficeSupplyCrawler()
 
 	crawler.crawlitems(sys.argv[2], sys.argv[3])	
 
