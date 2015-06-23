@@ -18,7 +18,7 @@ class Crawler:
 
 	def __init__(self):
 		self.Host='http://www.amazon.com'
-		self.MaxNumReviews = 1500
+		self.MaxNumReviews = 100
 
 	def _loadPage(self, url):
 		'''
@@ -281,20 +281,28 @@ class Crawler:
 					record['ListPrice'] = lp.string.strip()
 			except:
 				record['ListPrice'] = ''
+
+	def extractSaleRankLine(self, salesrank):
+		salesrankstr = ''
+		try:
+			salesrankstr = salesrank.contents[2].strip()
+		except:
+			pass
+		print "SalesRankString", salesrankstr
+		return salesrankstr
 			
 	def extractSaleRank(self, soup, record):
-		
-		# Task 1. Sales Rank
-		# Task 2. Product Category
+		record['Salesrank'] = ''
+		record['Category'] = '' 
 		try:
 			salesrank = soup.find(id='SalesRank')
-			rank = salesrank.contents[2].strip().split(' ', 1)[0]
-			category = salesrank.contents[2].strip().split(' ', 1)[1]
-			record['Salesrank'] = rank
-			record['Category'] = category
+			#print salesrank
+			record['Salesrank'] = self.extractSaleRankLine(salesrank)
+			rankvalues = salesrank.findAll('li', class_='zg_hrsr_item')
+			for rankval in rankvalues:
+				record['Salesrank'] = record['Salesrank'] + ' '.join(rankval.stripped_strings)
 		except:
-			record['Salesrank'] = ''
-			record['Category'] = '' 
+			pass
 	
 	def fetchItem(self, itemurl, record):
 		"""
@@ -318,20 +326,12 @@ class Crawler:
 		ts = str(datetime.datetime.now())
 		record['Timestamp'] = ts;
 
-		self.extractSaleRank(soup, record)
-
-		# Task.3. Release time
-		# Task5. Price 
-		# Note!!! e.g. Kindle eBook (free) does not have a price
-		# Different category of products may have different page layout, different tags
-		# FIXME: So far, the following is only for Books (confirmed)
-
-		self.extractPrice(soup, record)
 		self.extractName(soup, record)
+		self.extractPrice(soup, record, itemurl)
+		self.extractSaleRank(soup, record)
 
 		# Task 4. Star Ratings
 		# Task 7. Reviews (Recent 100): review Text, rating and timestamp, Reviewer
-
 		# Task 8. Reviewer Info: Name, Rating, rating, location
 		reviews = { 'TotalReviewCount' : ''}
 		try:
@@ -373,16 +373,16 @@ class MusicCrawler(Crawler):
 		record['Name'] = ''
 		try:
 			feature = soup.find(id='ppd-center')
+			print feature
 			record['Name'] = feature.h1.string.strip()
 		except:
 			record['Name'] = ''
 
-	def extractPrice(self, soup, record):
+	def extractPrice(self, soup, record, itemurl):
 		
 		record['OfferPrice'] = ''
 		try:
 			MusicID = itemurl[-10:]
-			#print MusicID
 			buyNewSection = soup.find(id=MusicID)
 			offerPrice = buyNewSection.find('span', class_='a-text-bold')
 			record['OfferPrice'] = offerPrice.contents[0].strip()
@@ -412,7 +412,7 @@ class MusicCrawler(Crawler):
 
 class HomeKitchenCrawler(Crawler):
 	
-	def extractPrice(self, soup, record):
+	def extractPrice(self, soup, record, itemurl):
 		
 		record['OfferPrice'] = ''
 		try:
@@ -446,41 +446,26 @@ class HomeKitchenCrawler(Crawler):
 			#except:
 			record['ListPrice'] = ''
 
-	def extractSaleRank(self, soup, record):
-		
-		# Task 1. Sales Rank
-		# Task 2. Product Category
+	def extractSaleRankLine(self, salesrank):
+		salesrankstr = ''
 		try:
-			salesrank = soup.find(id='SalesRank')
 			rankvalue = salesrank.find('td', class_= 'value')
-			record['Salesrank'] = ''.join(rankvalue.stripped_strings)
-			record['Category'] = ''#category
+			salesrankstr = ''.join(rankvalue.stripped_strings)
 		except:
-			try:
-				salesrank = soup.find(id='SalesRank')
-				print salesrank
-				rank = salesrank.contents[2].strip().split(' ', 1)[0]
-				category = salesrank.contents[2].strip().split(' ', 1)[1]
-				record['Salesrank'] = rank
-				record['Category'] = category
-			except:
-				record['Salesrank'] = ''
-				record['Category'] = '' 
+			pass
+		return salesrankstr
 		
-class OfficeSupplyCrawler(HomeKitchenCrawler):
-
-	def extractSaleRank(self, soup, record):
-		record['Salesrank'] = ''
+class OfficeCrawler(HomeKitchenCrawler):
+	
+	def extractSaleRankLine(self, salesrank):
+		salesrankstr = ''
 		try:
-			salesrank = soup.find(id='SalesRank')
-			rankvalues = salesrank.findAll('li', class_='zg_hrsr_item')
-			print rankvalues
-			for rankval in rankvalues:
-				record['Salesrank'] = record['Salesrank'] + ''.join(rankval.stripped_strings)
-			print record['Salesrank']
+			salesrankstr = salesrank.contents[2].strip()
 		except:
-			record['Salesrank'] = ''
-			record['Category'] = '' 
+			pass
+		print "SalesRankString", salesrankstr
+		return salesrankstr
+
 
 if __name__ == '__main__':
 	
@@ -499,11 +484,14 @@ if __name__ == '__main__':
 	crawler = Crawler()
 
 	if sys.argv[1] == 'home':
+		print "Using Home"
 		crawler = HomeKitchenCrawler()
 	elif sys.argv[1] == 'music':
+		print "Using Music"
 		crawler = MusicCrawler()
-	elif sys.argv[1] == 'osupply':
-		crawler = OfficeSupplyCrawler()
+	elif sys.argv[1] == 'office':
+		print "Using Office"
+		crawler = OfficeCrawler()
 
 	crawler.crawlitems(sys.argv[2], sys.argv[3])	
 
