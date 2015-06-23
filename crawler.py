@@ -417,7 +417,7 @@ class HomeKitchenCrawler(Crawler):
 		record['OfferPrice'] = ''
 		try:
 			pricediv = soup.find(id='priceblock_ourprice')
-			print pricediv
+			#print pricediv
 			record['OfferPrice'] = pricediv.string.strip()
 		except:
 			try:
@@ -434,7 +434,7 @@ class HomeKitchenCrawler(Crawler):
 			#istPrice = pricediv.find('span', class_= 'a-color-secondary a-text-strike')
 			listPrice = pricediv.findAll('td',
 					{'class' : lambda x: x and re.search('(\s|^)a-text-strike(\s|$)', x)})
-			print listPrice
+			#print listPrice
 			for lp in listPrice:
 				record['ListPrice'] = lp.string.strip()
 		except:
@@ -469,17 +469,25 @@ class HomeKitchenCrawler(Crawler):
 	
 if __name__ == '__main__':
 	
-	if len(sys.argv) < 3:
-		print "Error: invalid parameters. Usge: python crawl_music.py [url file] [path to output]"
+	if len(sys.argv) < 4:
+		print "Error: invalid parameters. Usge: python crawl_music.py [keyword] [url file] [path to output]"
 		exit(0);
 
-	if not os.path.exists(sys.argv[1]):
-		print "Error: file [" + sys.argv[1] + "] does not exist"
+	if not os.path.exists(sys.argv[2]):
+		print "Error: file [" + sys.argv[2] + "] does not exist"
 		exit(0)
 
-	if not os.path.exists(sys.argv[2]): 
-		print "Error: path [" + sys.argv[2] + "] does not exist"
+	if not os.path.exists(sys.argv[3]): 
+		print "Error: path [" + sys.argv[3] + "] does not exist"
 		exit(0)
 
-	crawler = HomeKitchenCrawler()
-	crawler.crawlitems(sys.argv[1], sys.argv[2])	
+	crawler = Crawler()
+
+	if sys.argv[1] == 'home':
+		crawler = HomeKitchenCrawler()
+	elif sys.argv[1] == 'music':
+		crawler = MusicCrawler()
+
+	crawler.crawlitems(sys.argv[2], sys.argv[3])	
+
+
