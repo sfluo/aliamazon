@@ -251,7 +251,7 @@ class Crawler:
 		except:
 			record['Name'] = ''
 
-	def extractPrice(self, soup, record):
+	def extractPrice(self, soup, record, itemurl):
 
 		record['OfferPrice'] = ''
 		try:
@@ -288,7 +288,7 @@ class Crawler:
 			salesrankstr = salesrank.contents[2].strip()
 		except:
 			pass
-		print "SalesRankString", salesrankstr
+		#print "SalesRankString", salesrankstr
 		return salesrankstr
 			
 	def extractSaleRank(self, soup, record):
@@ -373,7 +373,7 @@ class MusicCrawler(Crawler):
 		record['Name'] = ''
 		try:
 			feature = soup.find(id='ppd-center')
-			print feature
+			#print feature
 			record['Name'] = feature.h1.string.strip()
 		except:
 			record['Name'] = ''
@@ -463,7 +463,6 @@ class OfficeCrawler(HomeKitchenCrawler):
 			salesrankstr = salesrank.contents[2].strip()
 		except:
 			pass
-		print "SalesRankString", salesrankstr
 		return salesrankstr
 
 
