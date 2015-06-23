@@ -35,14 +35,13 @@ class Crawler:
 
 				#req.add_header('Cookie', FakeCookie) 
 				#req.add_header('User-Agent',UserAgent)
-				response = urllib2.urlopen(req)
+				response = urllib2.urlopen(req, timeout=10)
 				page = response.read()
 
 				return page
 
 			except:
 				tries += 1
-				continue;
 
 		print "Error: Fail to get ", url
 
@@ -296,8 +295,6 @@ class Crawler:
 		except:
 			record['Salesrank'] = ''
 			record['Category'] = '' 
-			
-		
 	
 	def fetchItem(self, itemurl, record):
 		"""
@@ -376,7 +373,6 @@ class MusicCrawler(Crawler):
 		record['Name'] = ''
 		try:
 			feature = soup.find(id='ppd-center')
-			print feature
 			record['Name'] = feature.h1.string.strip()
 		except:
 			record['Name'] = ''
@@ -415,6 +411,40 @@ class MusicCrawler(Crawler):
 				record['ListPrice'] = ''
 
 class HomeKitchenCrawler(Crawler):
+	
+	def extractPrice(self, soup, record):
+		
+		record['OfferPrice'] = ''
+		try:
+			pricediv = soup.find(id='priceblock_ourprice')
+			print pricediv
+			record['OfferPrice'] = pricediv.string.strip()
+		except:
+			try:
+				pricespan = soup.find(id='color_name_0_price')
+				pspan = pricespan.find('span', class_='a-size-mini')
+				record['OfferPrice'] = pspan.string.strip()
+			except:
+				record['OfferPrice'] =''
+
+		record['ListPrice'] = '' 
+		try:
+			pricediv = soup.find(id='price_feature_div')
+			#print pricediv
+			#istPrice = pricediv.find('span', class_= 'a-color-secondary a-text-strike')
+			listPrice = pricediv.findAll('td',
+					{'class' : lambda x: x and re.search('(\s|^)a-text-strike(\s|$)', x)})
+			print listPrice
+			for lp in listPrice:
+				record['ListPrice'] = lp.string.strip()
+		except:
+			#try:
+			#	listPrice = soup.findAll('span',
+			#		{'class' : lambda x: x and re.search('(\s|^)a-text-strike(\s|$)', x)})
+			#	for lp in listPrice:
+			#		record['ListPrice'] = lp.string.strip()
+			#except:
+			record['ListPrice'] = ''
 
 	def extractSaleRank(self, soup, record):
 		
@@ -422,12 +452,19 @@ class HomeKitchenCrawler(Crawler):
 		# Task 2. Product Category
 		try:
 			salesrank = soup.find(id='SalesRank')
-			print salesrank
-			record['Salesrank'] = ''#rank
+			rankvalue = salesrank.find('td', class_= 'value')
+			record['Salesrank'] = ''.join(rankvalue.stripped_strings)
 			record['Category'] = ''#category
 		except:
-			record['Salesrank'] = ''
-			record['Category'] = '' 
+			try:
+				salesrank = soup.find(id='SalesRank')
+				rank = salesrank.contents[2].strip().split(' ', 1)[0]
+				category = salesrank.contents[2].strip().split(' ', 1)[1]
+				record['Salesrank'] = rank
+				record['Category'] = category
+			except:
+				record['Salesrank'] = ''
+				record['Category'] = '' 
 		
 	
 if __name__ == '__main__':
@@ -444,5 +481,5 @@ if __name__ == '__main__':
 		print "Error: path [" + sys.argv[2] + "] does not exist"
 		exit(0)
 
-	crawler = Crawler()
+	crawler = HomeKitchenCrawler()
 	crawler.crawlitems(sys.argv[1], sys.argv[2])	
