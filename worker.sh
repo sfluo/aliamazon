@@ -37,7 +37,7 @@ mkdir -p "$datapath/$today/computers"
 python $currentpath/crawler.py office "$currentpath/head3000urls/Computers_computers.3000.txt"  "$datapath/$today/computers" &  
 
 mkdir -p "$datapath/$today/womanjewelry"
-python $currentpath/crawler.py jewelry "$currentpath/head3000urls/Woman's-Jewelry_jewelry.3000.txt" "$datapath/$today/womanjewelry" &
+python $currentpath/crawler.py home "$currentpath/head3000urls/Woman's-Jewelry_jewelry.3000.txt" "$datapath/$today/womanjewelry" &
 
 mkdir -p "$datapath/$today/videogame"
 python $currentpath/crawler.py office "$currentpath/head3000urls/Xbox-360-Games_video+games.3000.txt" "$datapath/$today/videogame" &
