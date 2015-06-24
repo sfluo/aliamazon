@@ -19,6 +19,7 @@ class Crawler:
 	def __init__(self):
 		self.Host='http://www.amazon.com'
 		self.MaxNumReviews = 100
+		self.sortby = 'recent' # or helpful
 
 	def _loadPage(self, url):
 		'''
@@ -344,7 +345,7 @@ class Crawler:
 				record['Reviews'] = reviews
 		except:
 			revurl =  itemurl.replace('/dp/', '/product-reviews/') + \
-				'/ref=cm_cr_dp_see_all_btm?ie=UTF8&showViewpoints=1&sortBy=helpful'
+				'/ref=cm_cr_dp_see_all_btm?ie=UTF8&showViewpoints=1&sortBy='+self.sortby
 			self._extractReviews(str(revurl), self.MaxNumReviews, reviews)
 			record['Reviews'] = reviews
 
