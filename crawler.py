@@ -46,8 +46,12 @@ class Crawler(object):
 			except:
 				tries += 1
 
-		self.logfile.write(datetime.now().isoformat()+ "\tFail to get " + url + "\n")
-		self.logfile.flush()
+		try:
+			self.logfile.write(datetime.now().isoformat()+ "\tFail to get " + url + "\n")
+			self.logfile.flush()
+		except:
+			self.logfile.write(datetime.now().isoformat() + "\t Unexpected Error.")
+			pass
 
 		return None;
 			
@@ -370,8 +374,14 @@ class Crawler(object):
 					#print h.hexdigest()
 					with open(outputpath + '/' + h.hexdigest() + '.json', 'w') as f:
 						json.dump(record, f)
-				self.logfile.write(datetime.now().isoformat() + "\t -- " + itemurl + "\n")
-				self.logfile.flush()
+
+				try:
+					self.logfile.write(datetime.now().isoformat() + "\t -- " + itemurl + "\n")
+					self.logfile.flush()
+				except:
+					self.logfile.write(datetime.now().isoformat() + "\t Unexpected Error.")
+					pass
+
 
 	def cleanup(self):
 		self.logfile.flush()
