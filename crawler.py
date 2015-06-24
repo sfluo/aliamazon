@@ -12,14 +12,16 @@ import re, os, sys
 import cookielib
 import hashlib
 
+from datetime import datetime
 from bs4 import BeautifulSoup
 
-class Crawler:
+class Crawler(object):
 
-	def __init__(self):
+	def __init__(self, logfile):
 		self.Host='http://www.amazon.com'
 		self.MaxNumReviews = 100
 		self.sortby = 'recent' # or helpful
+		self.logfile = (open(logfile, 'a') or stdout)
 
 	def _loadPage(self, url):
 		'''
@@ -44,7 +46,8 @@ class Crawler:
 			except:
 				tries += 1
 
-		print "Error: Fail to get ", url
+		self.logfile.write(datetime.now().iosformat()+ "\tFail to get " + url + "\n")
+		self.logfile.flush()
 
 		return None;
 			
@@ -324,7 +327,7 @@ class Crawler:
 		# Here, we extract all information we need
 
 		# Task 0. Time Stamp 
-		ts = str(datetime.datetime.now())
+		ts = str(datetime.now())
 		record['Timestamp'] = ts;
 
 		self.extractName(soup, record)
@@ -367,8 +370,17 @@ class Crawler:
 					#print h.hexdigest()
 					with open(outputpath + '/' + h.hexdigest() + '.json', 'w') as f:
 						json.dump(record, f)
+				self.logfile.write(datetime.now().isoformat() + "\t -- " + itemurl + "\n")
+				self.logfile.flush()
+
+	def cleanup(self):
+		self.logfile.flush()
+		self.logfile.close()
 
 class MusicCrawler(Crawler):
+	
+	def __init__(self, logfile):
+		super(MusicCrawler, self).__init__(logfile)
 	
 	def extractName(self, soup, record):
 		record['Name'] = ''
@@ -412,6 +424,9 @@ class MusicCrawler(Crawler):
 				record['ListPrice'] = ''
 
 class HomeKitchenCrawler(Crawler):
+
+	def __init__(self, logfile):
+		super(HomeKitchenCrawler, self).__init__(logfile)
 	
 	def extractPrice(self, soup, record, itemurl):
 		
@@ -457,6 +472,9 @@ class HomeKitchenCrawler(Crawler):
 		return salesrankstr
 		
 class OfficeCrawler(HomeKitchenCrawler):
+
+	def __init__(self, logfile):
+		super(OfficeCrawler, self).__init__(logfile)
 	
 	def extractSaleRankLine(self, salesrank):
 		salesrankstr = ''
@@ -481,18 +499,20 @@ if __name__ == '__main__':
 		print "Error: path [" + sys.argv[3] + "] does not exist"
 		exit(0)
 
-	crawler = Crawler()
+	logfile = sys.argv[3] + '/log_' + str(os.getpid()) + '.txt' 
+	crawler = Crawler(logfile)
 
 	if sys.argv[1] == 'home':
-		print "Using Home"
-		crawler = HomeKitchenCrawler()
+		#print "Using Home"
+		crawler = HomeKitchenCrawler(logfile)
 	elif sys.argv[1] == 'music':
-		print "Using Music"
-		crawler = MusicCrawler()
+		#print "Using Music"
+		crawler = MusicCrawler(logfile)
 	elif sys.argv[1] == 'office':
-		print "Using Office"
-		crawler = OfficeCrawler()
+		#print "Using Office"
+		crawler = OfficeCrawler(logfile)
 
 	crawler.crawlitems(sys.argv[2], sys.argv[3])	
+	crawler.cleanup()
 
 
