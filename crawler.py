@@ -23,7 +23,16 @@ class Crawler(object):
 		self.sortby = 'recent' # or helpful
 		self.logfile = (open(logfile, 'a') or stdout)
 
-	def _loadPage(self, url):
+	def logging(self, str):
+		
+		try:
+			self.logfile.write(datetime.now().isoformat() + "\t -- "+ str + "\n")
+		except:
+			self.logfile.write(datetime.now().isoformat() + "\t -- Unexpected Error. \n")
+
+		self.logfile.flush()
+
+	def loadPage(self, url):
 		'''
 			Get a page with customized http header, cookie and user-agent	
 		'''
@@ -46,12 +55,7 @@ class Crawler(object):
 			except:
 				tries += 1
 
-		try:
-			self.logfile.write(datetime.now().isoformat()+ "\tFail to get " + url + "\n")
-			self.logfile.flush()
-		except:
-			self.logfile.write(datetime.now().isoformat() + "\t Unexpected Error.")
-			pass
+			self.logging("Fail to get " + url)
 
 		return None;
 			
@@ -67,7 +71,7 @@ class Crawler(object):
 
 		# print(authorUrl)
 		
-		page = self._loadPage(authorUrl)
+		page = self.loadPage(authorUrl)
 		if page is None:
 			return
 
@@ -143,7 +147,7 @@ class Crawler(object):
 			#print(revUrl)
 
 			# Step 1: get the reviews page
-			page = self._loadPage(revUrl)
+			page = self.loadPage(revUrl)
 			if page is None:
 				break
 
@@ -322,7 +326,7 @@ class Crawler(object):
 		"""
 		#print(itemurl)
 
-		page = self._loadPage(itemurl)
+		page = self.loadPage(itemurl)
 		if page is None:
 			return
 
@@ -375,13 +379,7 @@ class Crawler(object):
 					with open(outputpath + '/' + h.hexdigest() + '.json', 'w') as f:
 						json.dump(record, f)
 
-				try:
-					self.logfile.write(datetime.now().isoformat() + "\t -- " + itemurl + "\n")
-					self.logfile.flush()
-				except:
-					self.logfile.write(datetime.now().isoformat() + "\t Unexpected Error.")
-					pass
-
+				self.logging(itemurl)
 
 	def cleanup(self):
 		self.logfile.flush()
