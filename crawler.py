@@ -46,7 +46,7 @@ class Crawler(object):
 			except:
 				tries += 1
 
-		self.logfile.write(datetime.now().iosformat()+ "\tFail to get " + url + "\n")
+		self.logfile.write(datetime.now().isoformat()+ "\tFail to get " + url + "\n")
 		self.logfile.flush()
 
 		return None;
