@@ -383,7 +383,7 @@ class Crawler(object):
 					with open(outputpath + '/' + h.hexdigest() + '.json', 'w') as f:
 						json.dump(record, f)
 
-				self.logging(itemurl)
+					self.logging(itemurl)
 
 	def cleanup(self):
 		self.logfile.flush()
