@@ -370,7 +370,9 @@ class Crawler(object):
 
 			for itemurl in urls:
 				itemurl = itemurl.strip()
-				record = { 'Itemurl' : itemurl}
+				if itemurl is None:
+					continue
+				record = { 'Itemurl' : itemurl, 'group' : os.path.basename(urlfile)}
 				valid = self.fetchItem(itemurl, record) # pull the item
 				if valid:
 					h = hashlib.md5()
