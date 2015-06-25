@@ -11,6 +11,7 @@ import string
 import re, os, sys
 import cookielib
 import hashlib
+import time
 
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -40,7 +41,7 @@ class Crawler(object):
 		tries = 0
 
 		# maximum three failures
-		while tries < 3:
+		while tries < 5:
 
 			try:
 				req = urllib2.Request(url)  # pull the page
@@ -53,6 +54,7 @@ class Crawler(object):
 				return page
 
 			except:
+				time.sleep(1)
 				tries += 1
 
 			self.logging("Fail to get " + url)
