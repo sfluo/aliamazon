@@ -230,7 +230,7 @@ class Crawler(object):
 				if reviewer is not None:
 					authorUrl = self.Host + reviewer.get('href')
 					profile = {'ProfileUrl' : authorUrl}
-					_extractReviewer(authorUrl, profile)
+					#self._extractReviewer(authorUrl, profile)
 				else:
 					profile = {'ProfileUrl' : ''}
 				a_review['Author'] = profile
