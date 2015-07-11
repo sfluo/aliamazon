@@ -2,7 +2,9 @@
 """
 	Accept a list of JSON file and aggregates to one CSV file 
 	with each row aggregated for one JSON file.
-	The OUTPUT file named "output.csv"
+
+	NOTE: Prerequisite - dictionary file 'warriner_ratings.csv',
+		which include the sentiment scores for words
 
 	by Shoufu Luo, 2015.07
 """
@@ -12,17 +14,42 @@ import json
 import re
 import csv
 import numpy as np
+import datetime
+import time
+from datetime import datetime
 
 class Analyzer:
 	
-	def __init__(self, dict={}):
+	def __init__(self, logfile, dict={}):
 		self.dict = dict 
-		self.schema = ['Group','Category','ProductName','AverageRating','TotalRatings',\
-			'NumOf5Star','NumOf4Star','NumOf3Star', 'NumOf2Star','NumOf1Star',\
-			'PurchasePrice','OriginalPrice','TimeID','TimeStamp','SalesRank','Valence','Arousal']
+		self.schema = ['Group','Category','Product_Name','Average_Rating','Total_Ratings',\
+			'Num_Of_5_Star','Num_Of_4_Star','Num_Of_3_Star', 'Num_Of_2_Star','Num_Of_1_Star',\
+			'Purchase_Price','Original_Price','TimeID','Timestamp','Sales_Rank','Valence','Arousal']
+		filepath, filename = os.path.split(logfile)
+		if not os.path.exists(filepath):
+			os.makedirs(filepath)
+		self.logfile = (open(logfile, 'a+') or stdout)
+
+	def logging(self, str):
+		"""
+			Logging 
+		"""
+		try:
+			self.logfile.write(datetime.now().isoformat() + "\t -- "+ str + "\n")
+		except:
+			self.logfile.write(datetime.now().isoformat() + "\t -- Unexpected Error. \n")
+
+		self.logfile.flush()
 
 	def getSchema(self):
+		"""
+			Data Schema
+		"""
 		return self.schema
+
+	def cleanup(self):
+		self.logfile.flush()
+		self.logfile.close()
 
 	def scoring(self, text):
 		"""
@@ -49,12 +76,11 @@ class Analyzer:
 		"""
 			Aggregate a JSON file into one row in CSV
 
-			[Schema]:
-			Group,Category,ProductName,AverageRating,TotalRatings NumOf5Star,NumOf4Star,NumOf3Star,
-			NumOf2Star,NumOf1Star,PurchasePrice,OriginalPrice,TimeID,TimeStamp,SalesRank,Valence,Arousal
+			[Schema]: use self.schema
 		"""
 		try:
 			jsondata = json.loads(open(jsonfile).read())
+
 			""" 
 				The group is filled by the filename, e.g. Xbox-360-Games_video+games.3000.txt 
 				[product_info].[number_of_instances].txt
@@ -69,10 +95,12 @@ class Analyzer:
 			arousal = []
 			for rev in jsondata['Reviews']['ReviewList']:
 				ratings.append(rev['StarRating'])
-				# calcuate valence and arousal
 				scores = self.scoring(rev['Text'])
 				valence.append(scores[0])
 				arousal.append(scores[1])
+
+			# calcuate valence and arousal
+			# average of all reviews: scoring(one_review) - average of all words
 			avg_valence = np.mean(valence) if valence != [] else 0
 			avg_arousal = np.mean(arousal) if arousal != [] else 0
 				
@@ -103,11 +131,14 @@ class Analyzer:
 				original, time_id.replace('-', '_'), jsondata['Timestamp'], ranking, avg_valence, avg_arousal]
 				
 		except Exception as e:
-			print str(e)
-			return []
+			self.logging(jsonfile + " : " + str(e))
+
+		return []
 	
 def loadWarrinerDict(filename):
-
+	"""
+		Sentiment word list
+	"""
 	dict = {}
 	with open(filename) as csvfile:
 		csvreader = csv.reader(csvfile, dialect=csv.excel)
@@ -128,8 +159,13 @@ if __name__ == "__main__":
 		print "Usage: python analyzer.py <output file name> <List of JSON files>"
 		exit()
 
+	# put in temporaray folder - just in case we need to know what's going on
+	logfile = '/tmp/aliamazon/analyzer/log_' + str(os.getpid()) + '.txt' 
+
 	dict = loadWarrinerDict('warriner_ratings.csv')
-	analyzer = Analyzer(dict)
+	analyzer = Analyzer(logfile, dict)
+
+	analyzer.logging("Composing " + sys.argv[1])
 
 	with open(sys.argv[1], 'wb') as csvfile:
 
@@ -138,11 +174,12 @@ if __name__ == "__main__":
 
 		# enumerate all files
 		for file in sys.argv[2:]:
-			print file
+
+			analyzer.logging("from " + file + " ...")
 
 			# Ignore files other than JSON
 			if not file.endswith(".json"):
-				print "Ignore non-JSON file [", file, "]."
+				analyzer.logging("Ignore non-JSON file [" + file + "].")
 				continue
 
 			try:
@@ -152,3 +189,5 @@ if __name__ == "__main__":
 			except Exception as e:
 				print e
 				pass	
+
+	analyzer.cleanup()
