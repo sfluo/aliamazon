@@ -86,7 +86,7 @@ class Analyzer:
 				[product_info].[number_of_instances].txt
 			"""	
 			group = jsondata['group'].encode('utf8').split('.')[-3]
-			name = jsondata['Name'][0]
+			name = jsondata['Name'][0].encode('utf8')
 			average = jsondata['Reviews']['AverageStarRating'].split(' ')[0]
 			total = jsondata['Reviews']['TotalReviewCount']
 
@@ -167,7 +167,7 @@ if __name__ == "__main__":
 
 	analyzer.logging("Composing " + sys.argv[1])
 
-	with open(sys.argv[1], 'wb') as csvfile:
+	with open(sys.argv[1], 'a') as csvfile:
 
 		csvdata = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 		csvdata.writerow(analyzer.getSchema())
