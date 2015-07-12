@@ -25,7 +25,7 @@ class Analyzer:
 		self.schema = ['Group','Category','Product_Name','Average_Rating','Total_Ratings',\
 			'Num_Of_5_Star','Num_Of_4_Star','Num_Of_3_Star', 'Num_Of_2_Star','Num_Of_1_Star',\
 			'Purchase_Price','Original_Price','TimeID','Timestamp','Sales_Rank','Valence','Arousal']
-		filepath, filename = os.path.split(logfile)
+		filepath = os.path.dirname(logfile)
 		if not os.path.exists(filepath):
 			os.makedirs(filepath)
 		self.logfile = (open(logfile, 'a+') or stdout)
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 	# put in temporaray folder - just in case we need to know what's going on
 	logfile = '/tmp/aliamazon/analyzer/log_' + str(os.getpid()) + '.txt' 
 
-	dict = loadWarrinerDict('warriner_ratings.csv')
+	dict = loadWarrinerDict(os.getcwd() + '/warriner_ratings.csv')
 	analyzer = Analyzer(logfile, dict)
 
 	analyzer.logging("Composing " + sys.argv[1])
