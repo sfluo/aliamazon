@@ -20,11 +20,13 @@ from datetime import datetime
 
 class Analyzer:
 	
-	def __init__(self, logfile, dict={}):
+	def __init__(self, logfile, dict={}, brand={}):
+		self.brand = brand
 		self.dict = dict 
-		self.schema = ['Group','Category','Product_Name','Average_Rating','Total_Ratings',\
-			'Num_Of_5_Star','Num_Of_4_Star','Num_Of_3_Star', 'Num_Of_2_Star','Num_Of_1_Star',\
-			'Purchase_Price','Original_Price','TimeID','Timestamp','Sales_Rank','Valence','Arousal']
+		self.schema = ['ID', 'IdType', 'Brand', 'Group','Category','Product_Name','Average_Rating', \
+			'Total_Ratings','Num_Of_5_Star','Num_Of_4_Star','Num_Of_3_Star', 'Num_Of_2_Star', \
+			'Num_Of_1_Star','Purchase_Price','Original_Price','TimeID','Timestamp',\
+			'Sales_Rank','Valence','Arousal']
 		filepath = os.path.dirname(logfile)
 		if not os.path.exists(filepath):
 			os.makedirs(filepath)
@@ -89,33 +91,40 @@ class Analyzer:
 			name = jsondata['Name'][0].encode('utf8')
 			average = jsondata['Reviews']['AverageStarRating'].split(' ')[0]
 			total = jsondata['Reviews']['TotalReviewCount']
+			asin = jsondata['Itemurl'][jsondata['Itemurl'].find('/') + 1]
+			print group, name, average, total
 
 			ratings = []
 			valence = []
 			arousal = []
 			for rev in jsondata['Reviews']['ReviewList']:
-				ratings.append(rev['StarRating'])
-				scores = self.scoring(rev['Text'])
-				valence.append(scores[0])
-				arousal.append(scores[1])
-
+				try:
+					ratings.append(rev['StarRating'])
+					scores = self.scoring(rev['Text'])
+					valence.append(scores[0])
+					arousal.append(scores[1])
+					print valence, arousal	
+				except Exception as e:
+					self.logging(jsonfile + " : (error) " + str(e))
+					
 			# calcuate valence and arousal
 			# average of all reviews: scoring(one_review) - average of all words
 			avg_valence = np.mean(valence) if valence != [] else 0
 			avg_arousal = np.mean(arousal) if arousal != [] else 0
+			print avg_valence, avg_arousal
 				
 			one = ratings.count('1')
 			two = ratings.count('2')
 			three = ratings.count('3')
 			four = ratings.count('4')
 			five = ratings.count('5')
-			# print one, two, three, four, five
+			print one, two, three, four, five
 
 			purchase = jsondata['OfferPrice'].encode('utf8')
 			original = jsondata['ListPrice'].encode('utf8')
-	
+			print purchase, original	
 			time_id = jsondata['Timestamp'].split(' ')[0]
-			# print time_id
+			print time_id
 	
 			# e.g. "#23,488 in Video Games ( ..."
 			# e.g. "#4311 in Electronics > Accessories 
@@ -127,14 +136,25 @@ class Analyzer:
 				ranking = m.group(1)
 				category = m.group(2)
 	
-			return [group, category, name, average, total, five, four, three, two, one, purchase,\
+			return [asin, "ASIN", self.brand[asin], group, category, name, average, total, five, four, \
+				three, two, one, purchase,\
 				original, time_id.replace('-', '_'), jsondata['Timestamp'], ranking, avg_valence, avg_arousal]
 				
 		except Exception as e:
-			self.logging(jsonfile + " : " + str(e))
+			self.logging(jsonfile + " : (error) " + str(e))
 
 		return []
 	
+def loadBrandInfo(branddir):
+	import glob
+	branddict={}
+	brands = glob.glob(branddir + '/*.brand.json')
+	for xfile in brands:
+		brandjson = json.loads(open(xfile).read())	
+		for prod in brandjson:
+			branddict[prod[1]] = prod[2][0]
+	return brandict
+
 def loadWarrinerDict(filename):
 	"""
 		Sentiment word list
@@ -162,7 +182,7 @@ if __name__ == "__main__":
 	# put in temporaray folder - just in case we need to know what's going on
 	logfile = '/tmp/aliamazon/analyzer/log_' + str(os.getpid()) + '.txt' 
 
-	dict = loadWarrinerDict(os.getcwd() + '/warriner_ratings.csv')
+	dict = loadWarrinerDict(os.getcwd() + '/aliamazon/warriner_ratings.csv')
 	analyzer = Analyzer(logfile, dict)
 
 	analyzer.logging("Composing " + sys.argv[1])
@@ -172,18 +192,18 @@ if __name__ == "__main__":
 		csvdata = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 		csvdata.writerow(analyzer.getSchema())
 
-		# enumerate all files
-		for file in sys.argv[2:]:
+		# enumerate all JSON files
+		for xfile in sys.argv[2:]:
 
-			analyzer.logging("from " + file + " ...")
+			analyzer.logging("from " + xfile + " ...")
 
 			# Ignore files other than JSON
-			if not file.endswith(".json"):
-				analyzer.logging("Ignore non-JSON file [" + file + "].")
+			if not xfile.endswith(".json"):
+				analyzer.logging("Ignore non-JSON file [" + xfile + "].")
 				continue
 
 			try:
-				csvrow = analyzer.aggregate(file)
+				csvrow = analyzer.aggregate(xfile)
 				if csvrow != []:
 					csvdata.writerow(csvrow)
 			except Exception as e:
